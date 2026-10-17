@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import sys
-import os
 import json
 import urllib.request
 import threading
 
-SERVER_URL = os.getenv("SPORTSAGENTIC_URL", "http://localhost:8080/sse")
+SERVER_URL = "http://localhost:8080/sse"
 
 def call_mcp_tool(tool_name, arguments):
     endpoint_event = threading.Event()
@@ -21,14 +20,14 @@ def call_mcp_tool(tool_name, arguments):
                     if l.startswith("data:"):
                         endpoint = l.split("data:", 1)[1].strip()
                         endpoint_event.set()
-        except Exception:
+        except Exception as e:
             endpoint_event.set()
 
     t = threading.Thread(target=listen, daemon=True)
     t.start()
     
     if not endpoint_event.wait(timeout=4) or not endpoint:
-        return {"error": f"Could not connect to SportsAgentic MCP server at {SERVER_URL}. Is it running?"}
+        return {"error": "Could not connect to SportsAgentic MCP server at http://localhost:8080. Is it running?"}
 
     post_data = json.dumps({
         "jsonrpc": "2.0",

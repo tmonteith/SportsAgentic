@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -42,14 +43,14 @@ func (s *Server) registerTools() {
 		mcp.WithNumber("year", mcp.Description("Season year (defaults to current year)")),
 		mcp.WithNumber("week", mcp.Description("Week number (1-15)")),
 		mcp.WithString("date", mcp.Description("Specific date filter formatted as YYYY-MM-DD")),
-		mcp.WithString("team", mcp.Description("Team name or common abbreviation (e.g., 'Ole Miss', 'Bama', 'Ohio State')")),
+		mcp.WithString("team", mcp.Description("Team name or common abbreviation (e.g., 'Ole Miss', 'Bama', 'Ohio State', 'CSU')")),
 	)
 	s.mcpServer.AddTool(scoresTool, s.handleGetScores)
 
 	// Tool 2: Get Team Schedule
 	scheduleTool := mcp.NewTool("get_team_schedule",
 		mcp.WithDescription("Get past or upcoming schedule and game results for a specific College Football team."),
-		mcp.WithString("team", mcp.Required(), mcp.Description("Team name or abbreviation (e.g., 'Georgia', 'Michigan', 'Texas')")),
+		mcp.WithString("team", mcp.Required(), mcp.Description("Team name or abbreviation (e.g., 'Georgia', 'Michigan', 'Texas', 'CSU')")),
 		mcp.WithNumber("year", mcp.Description("Season year (defaults to current year)")),
 	)
 	s.mcpServer.AddTool(scheduleTool, s.handleGetSchedule)
@@ -91,7 +92,6 @@ func (s *Server) handleGetScores(ctx context.Context, request mcp.CallToolReques
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to fetch games: %v", err)), nil
 	}
 
-	// Filter by date if specified
 	if dateStr, ok := date.(string); ok && dateStr != "" {
 		filtered := make([]cfbd.Game, 0)
 		for _, g := range games {
@@ -147,7 +147,7 @@ func (s *Server) handleGetRankings(ctx context.Context, request mcp.CallToolRequ
 	}
 
 	var weekInt int
-	if w, ok := request.Params.Arguments["week"].(float64); ok {
+	if w, ok := week.(float64); ok {
 		weekInt = int(w)
 	}
 
@@ -169,6 +169,10 @@ func (s *Server) ServeStdio() error {
 }
 
 func (s *Server) ServeSSE(addr string) error {
-	sseServer := server.NewSSEServer(s.mcpServer, "http://"+addr)
+	baseURL := "http://localhost" + addr
+	if !strings.HasPrefix(addr, ":") {
+		baseURL = "http://" + addr
+	}
+	sseServer := server.NewSSEServer(s.mcpServer, baseURL)
 	return sseServer.Start(addr)
 }
