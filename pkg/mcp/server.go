@@ -157,9 +157,8 @@ func (s *Server) ServeSSE(addr string) error {
 	sseServer := server.NewSSEServer(s.mcpServer, "http://"+addr)
 
 	mux := http.NewServeMux()
-	
-	// SSEServer implements http.Handler directly, serving /sse and /message
-	mux.Handle("/", sseServer)
+	mux.Handle("/sse", sseServer.SSEHandler())
+	mux.Handle("/message", sseServer.MessageHandler())
 
 	// Direct REST API route for easy web / curl / bot access
 	mux.HandleFunc("/api/scores", func(w http.ResponseWriter, r *http.Request) {
