@@ -27,11 +27,11 @@ func main() {
 			log.Fatalf("Stdio server error: %v", err)
 		}
 	case "sse":
-		addr := "localhost:" + *port
-		log.Printf("Starting College Football Agent SSE Server on http://%s\n", addr)
-		log.Printf(" - SSE Endpoint:     http://%s/sse\n", addr)
-		log.Printf(" - Message Endpoint: http://%s/message\n", addr)
-		if err := server.ServeSSE(addr); err != nil {
+		bindAddr := ":" + *port
+		log.Printf("Starting College Football Agent SSE Server on %s\n", bindAddr)
+		log.Printf(" - SSE Endpoint:     http://localhost:%s/sse\n", *port)
+		log.Printf(" - Message Endpoint: http://localhost:%s/message\n", *port)
+		if err := server.ServeSSE(bindAddr); err != nil {
 			log.Fatalf("SSE server error: %v", err)
 		}
 	default:
