@@ -155,12 +155,13 @@ func (s *Server) ServeStdio() error {
 
 func (s *Server) ServeSSE(addr string) error {
 	sseServer := server.NewSSEServer(s.mcpServer, "http://"+addr)
-	
-	mux := http.NewServeMux()
-	mux.HandleFunc("/sse", sseServer.HandleSSE())
-	mux.HandleFunc("/message", sseServer.HandleMessage())
 
-	// Simple HTTP REST endpoint for easy testing via curl/postman/web apps
+	mux := http.NewServeMux()
+	
+	// SSEServer implements http.Handler directly, serving /sse and /message
+	mux.Handle("/", sseServer)
+
+	// Direct REST API route for easy web / curl / bot access
 	mux.HandleFunc("/api/scores", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		team := r.URL.Query().Get("team")
