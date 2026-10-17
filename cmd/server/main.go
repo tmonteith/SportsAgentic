@@ -9,8 +9,13 @@ import (
 )
 
 func main() {
+	defaultPort := os.Getenv("PORT")
+	if defaultPort == "" {
+		defaultPort = "8080"
+	}
+
 	mode := flag.String("mode", "sse", "Transport mode: 'sse' (HTTP / SSE server) or 'stdio' (MCP stdio)")
-	port := flag.String("port", "8080", "Port to listen on when running in SSE/HTTP mode")
+	port := flag.String("port", defaultPort, "Port to listen on when running in SSE/HTTP mode")
 	flag.Parse()
 
 	apiKey := os.Getenv("CFBD_API_KEY")
