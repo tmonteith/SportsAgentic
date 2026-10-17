@@ -1,13 +1,38 @@
 # 🏈 SportsAgentic — Universal College Football Agent & MCP Server
 
-An open-source, real-time **College Football (CFB) Agent & MCP Server** written in Go.
+An open-source, high-performance **College Football (CFB) Agent & MCP Server** written in Go.
 
-Exposes live scores, team schedules, rankings, and stats across **all major AI tools and LLM ecosystems**:
-- 🟣 **Claude** (Claude Desktop & Claude Code via MCP)
+Query live game scores, weekly matchups, full team schedules, and national rankings across **any AI agent ecosystem**:
+- 🟣 **Claude** (Claude Desktop & Claude Code via native MCP)
 - 🟢 **OpenAI & ChatGPT** (Custom GPT Actions via OpenAPI & Assistants API)
 - 🔷 **Delta** (Pre-packaged Delta Skill `/cfb`)
 - 💻 **Cursor, Zed & Windsurf** (Native IDE MCP)
-- 🐳 **Docker & Container Ready** (Run anywhere with zero Go/Python installation)
+- 🐳 **Docker Ready** (One-command setup with zero Go/Python installation)
+
+---
+
+## 🏗️ Architecture
+
+```
+  ┌──────────────────────────────────────────────────────────────┐
+  │                        AI INTERFACES                         │
+  │   [Claude Desktop]   [ChatGPT / OpenAI]   [Delta]   [Cursor] │
+  └───────────────┬──────────────┬───────────────┬───────────────┘
+                  │              │               │
+     MCP (stdio)  │   OpenAPI    │   MCP (SSE)   │  MCP (stdio)
+                  ▼              ▼               ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │                SportsAgentic Core (Go Server)                │
+  │  - Smart Team Entity Resolver ("Bama", "Ole Miss", "CSU")    │
+  │  - Dynamic Season & Week Resolver                            │
+  │  - Multi-Transport Engine (Stdio, SSE, REST)                 │
+  └──────────────────────────────┬───────────────────────────────┘
+                                 │
+                                 ▼
+  ┌──────────────────────────────────────────────────────────────┐
+  │                 College Football Data (CFBD)                 │
+  └──────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -19,13 +44,15 @@ You don't need Go or Python installed if you have Docker.
 git clone https://github.com/tmonteith/SportsAgentic.git
 cd SportsAgentic
 
-# Set your free API key (https://collegefootballdata.com/key)
-export CFBD_API_KEY="your_api_key_here"
+# 1. Create your .env file
+cp .env.example .env
+# Edit .env and paste your free key from https://collegefootballdata.com/key
 
-# Run with Docker Compose
+# 2. Start the container
 docker compose up
 ```
-The server is now live at `http://localhost:8080` (serving MCP SSE and REST endpoints).
+
+The server will build and start listening at `http://localhost:8080`.
 
 ---
 
@@ -36,12 +63,15 @@ The server is now live at `http://localhost:8080` (serving MCP SSE and REST endp
 - **Free API Key** from [CollegeFootballData.com/key](https://collegefootballdata.com/key)
 
 ```bash
+git clone https://github.com/tmonteith/SportsAgentic.git
+cd SportsAgentic
+
 export CFBD_API_KEY="your_api_key_here"
 
 # Run HTTP / SSE Server (for Delta, Web & Network Agents)
 go run cmd/server/main.go --mode=sse --port=8080
 
-# Or build single binary
+# Or build a standalone binary
 go build -o bin/sportsagentic cmd/server/main.go
 ```
 
@@ -49,10 +79,28 @@ go build -o bin/sportsagentic cmd/server/main.go
 
 ## 🔌 Connecting to Your Agent Platform
 
-### 1. 🟣 Claude (Desktop & CLI)
+### 1. 🔷 Delta
+
+When you open this repository as a project in Delta, the `/cfb` skill is automatically detected from `.agents/skills/cfb/`.
+
+To install the skill globally across all your Delta conversations:
+```bash
+mkdir -p ~/.agents/skills/cfb
+cp .agents/skills/cfb/* ~/.agents/skills/cfb/
+```
+
+Now in Delta, ask anytime:
+* `/cfb who is playing today?`
+* `/cfb what are the scores for Bama?`
+* `/cfb what was the most recent CSU game score?`
+* `/cfb check rankings for week 7`
+
+---
+
+### 2. 🟣 Claude (Desktop & CLI)
 
 #### Claude Desktop
-Add this to your `claude_desktop_config.json`:
+Add this entry to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
@@ -74,14 +122,14 @@ claude mcp add college-football /path/to/sportsagentic -- --mode=stdio
 
 ---
 
-### 2. 🟢 OpenAI & ChatGPT
+### 3. 🟢 OpenAI & ChatGPT
 
 #### A. ChatGPT Custom GPT Actions
 You can connect this agent directly to a **Custom GPT** in ChatGPT:
 1. In ChatGPT, go to **Explore GPTs > Create a GPT > Configure > Actions > Create new action**.
 2. Copy and paste the contents of [`openapi.yaml`](./openapi.yaml) into the Schema box.
 3. If running locally, expose your port via a tunnel (e.g. `ngrok http 8080`) and set the server URL in `openapi.yaml`.
-4. Now ChatGPT can query live games, schedules, and rankings in your custom GPT!
+4. Now ChatGPT can query live games, schedules, and rankings!
 
 #### B. OpenAI SDK (Python / TypeScript)
 Use standard tool calling with OpenAI:
@@ -94,23 +142,6 @@ client = OpenAI()
 # Call the local SportsAgentic endpoint
 scores = requests.get("http://localhost:8080/api/scores?team=OleMiss").json()
 ```
-
----
-
-### 3. 🔷 Delta
-
-When you open this repository as a project in Delta, the `/cfb` skill is automatically detected from `.agents/skills/cfb/`.
-
-To install the skill globally across all your Delta conversations:
-```bash
-mkdir -p ~/.agents/skills/cfb
-cp .agents/skills/cfb/* ~/.agents/skills/cfb/
-```
-
-Now in Delta, ask anytime:
-* `/cfb who is playing today?`
-* `/cfb what are the scores for Bama?`
-* `/cfb check rankings for week 7`
 
 ---
 
@@ -144,7 +175,7 @@ Add to your Cursor / Zed MCP configuration:
 ---
 
 ## 🤝 Contributing
-Contributions are welcome! Please open an issue or pull request.
+Pull requests are welcome! If you want to add new tools (such as transfer portal trackers, injury reports, or betting line analytics), feel free to open an issue or PR.
 
 ## 📄 License
 MIT License. See [LICENSE](LICENSE) for details.
