@@ -1,0 +1,11 @@
+services:
+  sportsagentic:
+    build: .
+    container_name: sportsagentic
+    ports:
+      - "8080:8080"
+    environment:
+      - CFBD_API_KEY=${CFBD_API_KEY}
+    env_file:
+      - .env
+    restart: unless-stopped

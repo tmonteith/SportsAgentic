@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: SportsAgentic College Football API
+  description: Real-time College Football scores, game schedules, and rankings API for ChatGPT Custom Actions and AI Agents.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local SportsAgentic Server
+paths:
+  /api/scores:
+    get:
+      operationId: getCfbScores
+      summary: Get College Football Scores and Game Schedules
+      description: Returns game scores, schedules, and results filtered by year, week, date, or team.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Season year (e.g., 2026)
+        - name: week
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Season week number (1-15)
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Specific date (YYYY-MM-DD)
+        - name: team
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Team name or nickname (e.g. "Bama", "Ole Miss", "Texas")
+      responses:
+        '200':
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    season:
+                      type: integer
+                    week:
+                      type: integer
+                    startDate:
+                      type: string
+                    completed:
+                      type: boolean
+                    homeTeam:
+                      type: string
+                    awayTeam:
+                      type: string
+                    homePoints:
+                      type: integer
+                      nullable: true
+                    awayPoints:
+                      type: integer
+                      nullable: true
+                    venue:
+                      type: string
+
+  /api/schedule:
+    get:
+      operationId: getTeamSchedule
+      summary: Get Team Schedule
+      description: Returns full season schedule and results for a college football team.
+      parameters:
+        - name: team
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Team name or nickname
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Team game schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rankings:
+    get:
+      operationId: getCfbRankings
+      summary: Get National Rankings
+      description: Returns AP Top 25 and CFP rankings for a given week.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: week
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rankings data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
