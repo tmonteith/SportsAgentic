@@ -1,55 +1,87 @@
-# SportsAgentic - College Football Agent & MCP Server
+# 🏈 SportsAgentic — College Football Agent & MCP Server
 
-Real-time College Football (CFB) agent powered by Go, exposing both an **SSE/HTTP REST Server** and a **Stdio MCP Server** for maximum client reach.
+An open-source, real-time **College Football (CFB) Agent & MCP Server** built in Go.
 
-## Interfaces Supported
-
-1. **SSE / HTTP Server Mode (`--mode=sse`):**
-   - **SSE Endpoint (`/sse`):** Allows web frontends, remote AI clients, and network agents to stream MCP tool executions over HTTP.
-   - **REST API Endpoint (`/api/scores`):** Direct HTTP JSON API for web apps, mobile clients, Slack/Discord bots, and `curl`.
-2. **Stdio MCP Server Mode (`--mode=stdio`):**
-   - Direct stdio protocol interface for local desktop AI clients (Claude Desktop, Cursor, Zed, Windsurf).
+Exposes college football game scores, schedules, national rankings, and team stats via the **Model Context Protocol (MCP)** and **HTTP / SSE**, making it instantly pluggable into AI agents and coding tools (Delta, Claude Desktop, Cursor, Zed, Windsurf, or custom web frontends).
 
 ---
 
-## Running the Server Locally
+## ⚡ Features
 
-### Prerequisites
-- Go 1.22+
-- Free API Key from [CollegeFootballData.com](https://collegefootballdata.com/)
+- **Multi-Client MCP Support:**
+  - **SSE / HTTP Server Mode:** Network-accessible streamable MCP protocol for Delta, web apps, Slack/Discord bots, and remote agents.
+  - **Stdio Mode:** Direct standard-in/out transport for desktop clients like Claude Desktop and Cursor.
+- **Delta Agent Skill Included:** Pre-configured `.agents/skills/cfb/` skill for Delta so any Delta user can immediately ask CFB queries using `/cfb`.
+- **Smart Team Entity Resolution:** Automatically resolves common team nicknames and abbreviations (e.g., `"Ole Miss"` → `"Mississippi"`, `"Bama"` → `"Alabama"`, `"OSU"` → `"Ohio State"`, `"UGA"` → `"Georgia"`).
+- **Comprehensive CFB Data:** Powered by [CollegeFootballData.com (CFBD)](https://collegefootballdata.com/).
 
-### Environment Setup
+---
+
+## 🛠️ Prerequisites
+
+- **Go 1.22+**
+- **Python 3.8+** (for the Delta skill runner)
+- **Free API Key** from [CollegeFootballData.com/key](https://collegefootballdata.com/key)
+
+---
+
+## 🚀 Quickstart
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/tmonteith/SportsAgentic.git
+cd SportsAgentic
+```
+
+### 2. Configure your API Key
 ```bash
 export CFBD_API_KEY="your_api_key_here"
 ```
 
-### 1. Run as HTTP / SSE Server (Default - Network & Web Clients)
+### 3. Run the Server
+
+#### Option A: HTTP / SSE Mode (Recommended for Delta & Web Clients)
 ```bash
 go run cmd/server/main.go --mode=sse --port=8080
 ```
-- **Test REST API in browser or curl:**
-  ```bash
-  curl "http://localhost:8080/api/scores?team=olemiss"
-  ```
-- **SSE MCP Endpoint for Web Agents:** `http://localhost:8080/sse`
+- **SSE Endpoint:** `http://localhost:8080/sse`
+- **JSON-RPC Message Endpoint:** `http://localhost:8080/message`
 
----
-
-### 2. Run as Stdio MCP Server (Desktop AI Clients)
+#### Option B: Build Single Binary
 ```bash
-go run cmd/server/main.go --mode=stdio
+go build -o bin/sportsagentic cmd/server/main.go
+./bin/sportsagentic --mode=sse --port=8080
 ```
 
 ---
 
-## Connecting to Claude Desktop / Local MCP Clients
+## 🔌 Connecting to Your Agentic Tools
 
-Add the binary execution entry to your `claude_desktop_config.json`:
+### 1. Delta
+When you open this repository as a project in Delta, the `/cfb` skill is automatically detected from `.agents/skills/cfb/`.
+
+To use the skill globally across all your Delta projects:
+```bash
+mkdir -p ~/.agents/skills/cfb
+cp .agents/skills/cfb/* ~/.agents/skills/cfb/
+```
+
+Now in Delta, simply ask:
+* `/cfb who is playing today?`
+* `/cfb what was the score of the Alabama game?`
+* `/cfb show me the latest top 25 rankings`
+
+---
+
+### 2. Claude Desktop / Cursor / Windsurf / Zed (Stdio Mode)
+
+Add the server to your `claude_desktop_config.json`:
+
 ```json
 {
   "mcpServers": {
     "college-football": {
-      "command": "/path/to/repos/SportsAgentic/bin/sportsagentic",
+      "command": "/absolute/path/to/SportsAgentic/bin/sportsagentic",
       "args": ["--mode=stdio"],
       "env": {
         "CFBD_API_KEY": "your_api_key_here"
@@ -58,3 +90,40 @@ Add the binary execution entry to your `claude_desktop_config.json`:
   }
 }
 ```
+
+---
+
+### 3. Direct CLI Queries
+You can also invoke tools directly from your terminal:
+```bash
+# Get scores by date
+python3 .agents/skills/cfb/query.py get_cfb_scores '{"date": "2026-10-17"}'
+
+# Get scores / results for a specific team
+python3 .agents/skills/cfb/query.py get_cfb_scores '{"team": "Ole Miss"}'
+
+# Get team schedule
+python3 .agents/skills/cfb/query.py get_team_schedule '{"team": "Georgia"}'
+
+# Get rankings
+python3 .agents/skills/cfb/query.py get_cfb_rankings '{"week": 7}'
+```
+
+---
+
+## 📦 Exposed MCP Tools
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| **`get_cfb_scores`** | `year`, `week`, `date` (YYYY-MM-DD), `team` | Fetch game scores and results for any team, week, or specific date. |
+| **`get_team_schedule`**| `team` (required), `year` | Get full season schedule and results for any college team. |
+| **`get_cfb_rankings`** | `year`, `week` | Retrieve national AP Top 25 and CFP rankings. |
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! If you want to add tools (e.g. transfer portal tracker, player injury availability reports, advanced analytics), feel free to open an issue or PR.
+
+## 📄 License
+MIT License. See [LICENSE](LICENSE) for details.
