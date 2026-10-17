@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -155,23 +154,5 @@ func (s *Server) ServeStdio() error {
 
 func (s *Server) ServeSSE(addr string) error {
 	sseServer := server.NewSSEServer(s.mcpServer, "http://"+addr)
-
-	mux := http.NewServeMux()
-	mux.Handle("/sse", sseServer.SSEHandler())
-	mux.Handle("/message", sseServer.MessageHandler())
-
-	// Direct REST API route for easy web / curl / bot access
-	mux.HandleFunc("/api/scores", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		team := r.URL.Query().Get("team")
-		resolved := resolver.ResolveTeamName(team)
-		games, err := s.cfbdClient.GetGames(2024, 0, resolved)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(games)
-	})
-
-	return http.ListenAndServe(addr, mux)
+	return sseServer.Start(addr)
 }
