@@ -28,28 +28,28 @@ func NewClient(apiKey string) *Client {
 }
 
 type Game struct {
-	ID            int    `json:"id"`
-	Season        int    `json:"season"`
-	Week          int    `json:"week"`
-	SeasonType    string `json:"season_type"`
-	StartDate     string `json:"start_date"`
-	Completed     bool   `json:"completed"`
-	HomeTeam      string `json:"home_team"`
-	HomeConference string `json:"home_conference"`
-	HomePoints    *int   `json:"home_points"`
-	AwayTeam      string `json:"away_team"`
-	AwayConference string `json:"away_conference"`
-	AwayPoints    *int   `json:"away_points"`
-	Venue         string `json:"venue"`
+	ID             int    `json:"id"`
+	Season         int    `json:"season"`
+	Week           int    `json:"week"`
+	SeasonType     string `json:"seasonType"`
+	StartDate      string `json:"startDate"`
+	Completed      bool   `json:"completed"`
+	HomeTeam       string `json:"homeTeam"`
+	HomeConference string `json:"homeConference"`
+	HomePoints     *int   `json:"homePoints"`
+	AwayTeam       string `json:"awayTeam"`
+	AwayConference string `json:"awayConference"`
+	AwayPoints     *int   `json:"awayPoints"`
+	Venue          string `json:"venue"`
 }
 
 type Team struct {
-	ID           int      `json:"id"`
-	School       string   `json:"school"`
-	Mascot       string   `json:"mascot"`
-	Abbreviation string   `json:"abbreviation"`
-	Conference   string   `json:"conference"`
-	Division     string   `json:"division"`
+	ID             int    `json:"id"`
+	School         string `json:"school"`
+	Mascot         string `json:"mascot"`
+	Abbreviation   string `json:"abbreviation"`
+	Conference     string `json:"conference"`
+	Division       string `json:"division"`
 	Classification string `json:"classification"`
 }
 
@@ -72,16 +72,16 @@ type RankingWeek struct {
 }
 
 type Poll struct {
-	Poll    string `json:"poll"`
-	Ranks   []Rank `json:"ranks"`
+	Poll  string `json:"poll"`
+	Ranks []Rank `json:"ranks"`
 }
 
 type Rank struct {
-	Rank       int    `json:"rank"`
-	School     string `json:"school"`
-	Conference string `json:"conference"`
-	FirstPlaceVotes int `json:"firstPlaceVotes"`
-	Points     int    `json:"points"`
+	Rank            int    `json:"rank"`
+	School          string `json:"school"`
+	Conference      string `json:"conference"`
+	FirstPlaceVotes int    `json:"firstPlaceVotes"`
+	Points          int    `json:"points"`
 }
 
 func (c *Client) get(endpoint string, query url.Values, v interface{}) error {
@@ -136,7 +136,7 @@ func (c *Client) GetGames(year int, week int, team string) ([]Game, error) {
 
 func (c *Client) GetTeams() ([]Team, error) {
 	q := url.Values{}
-	q.Set("conference", "SEC") // can expand or omit filters
+	q.Set("conference", "SEC")
 	var teams []Team
 	err := c.get("/teams/fbs", q, &teams)
 	return teams, err
