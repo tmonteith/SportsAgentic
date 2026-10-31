@@ -147,7 +147,7 @@ func (s *Server) handleGetRankings(ctx context.Context, request mcp.CallToolRequ
 	}
 
 	var weekInt int
-	if w, ok := week.(float64); ok {
+	if w, ok := request.Params.Arguments["week"].(float64); ok {
 		weekInt = int(w)
 	}
 
