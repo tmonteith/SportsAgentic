@@ -174,6 +174,23 @@ Add to your Cursor / Zed MCP configuration:
 
 ---
 
+## ☸️ Kubernetes Deployment (Helm)
+
+A production Helm chart is provided in [`charts/sportsagentic`](./charts/sportsagentic).
+
+```bash
+# Lint and preview rendered manifests
+helm lint charts/sportsagentic
+helm template sportsagentic charts/sportsagentic
+
+# Install or upgrade the release in your cluster
+helm upgrade --install sportsagentic charts/sportsagentic \
+  --namespace sportsagentic --create-namespace \
+  --set secrets.cfbdApiKey="${CFBD_API_KEY}"
+```
+
+---
+
 ## 🤝 Contributing
 Pull requests are welcome! If you want to add new tools (such as transfer portal trackers, injury reports, or betting line analytics), feel free to open an issue or PR.
 

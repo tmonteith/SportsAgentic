@@ -1,0 +1,10 @@
+SportsAgentic MCP Server has been deployed!
+
+1. In-cluster SSE endpoint:
+  http://{{ include "sportsagentic.fullname" . }}:{{ .Values.service.port }}/sse
+
+2. Forward the service port locally to inspect the MCP server:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "sportsagentic.fullname" . }} 8080:{{ .Values.service.port }}
+
+3. Test SSE endpoint:
+  curl -i http://localhost:8080/sse
