@@ -39,11 +39,11 @@ func NewServer(apiKey string) *Server {
 func (s *Server) registerTools() {
 	// Tool 1: Get CFB Scores & Schedule
 	scoresTool := mcp.NewTool("get_cfb_scores",
-		mcp.WithDescription("Fetch College Football scores, game schedules, and match results for a given year, week, date (YYYY-MM-DD), or team."),
+		mcp.WithDescription("Fetch College Football scores, game schedules, and match results. IMPORTANT: Always provide the 'team' parameter if a specific school or matchup is requested to avoid retrieving all games nationwide."),
 		mcp.WithNumber("year", mcp.Description("Season year (defaults to current year)")),
 		mcp.WithNumber("week", mcp.Description("Week number (1-15)")),
 		mcp.WithString("date", mcp.Description("Specific date filter formatted as YYYY-MM-DD")),
-		mcp.WithString("team", mcp.Description("Team name or common abbreviation (e.g., 'Ole Miss', 'Bama', 'Ohio State', 'CSU')")),
+		mcp.WithString("team", mcp.Description("Team name or common abbreviation (e.g., 'CSU', 'Ole Miss', 'Bama', 'Ohio State'). ALWAYS provide this when asking about a specific team.")),
 	)
 	s.mcpServer.AddTool(scoresTool, s.handleGetScores)
 
