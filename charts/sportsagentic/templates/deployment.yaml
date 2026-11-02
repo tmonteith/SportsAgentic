@@ -34,7 +34,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ include "sportsagentic.imageTag" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - "--mode={{ .Values.config.mode }}"
@@ -51,7 +51,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "sportsagentic.secretName" . }}
                   key: {{ .Values.secrets.existingSecretKey }}
-                  optional: true
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

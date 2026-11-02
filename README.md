@@ -180,14 +180,23 @@ A production Helm chart is provided in [`charts/sportsagentic`](./charts/sportsa
 
 ```bash
 # Lint and preview rendered manifests
-helm lint charts/sportsagentic
-helm template sportsagentic charts/sportsagentic
+helm lint charts/sportsagentic --set secrets.existingSecret=mcp-secrets
+helm template sportsagentic charts/sportsagentic --set secrets.existingSecret=mcp-secrets
+
+# Keep the API key in a Secret that Helm doesn't manage
+kubectl create namespace sportsagentic
+kubectl create secret generic mcp-secrets \
+  --namespace sportsagentic \
+  --from-literal=CFBD_API_KEY="${CFBD_API_KEY}"
 
 # Install or upgrade the release in your cluster
 helm upgrade --install sportsagentic charts/sportsagentic \
-  --namespace sportsagentic --create-namespace \
-  --set secrets.cfbdApiKey="${CFBD_API_KEY}"
+  --namespace sportsagentic \
+  --set secrets.existingSecret=mcp-secrets \
+  --set-string image.tag=<git-sha>
 ```
+
+The chart fails if neither `secrets.existingSecret` nor `secrets.cfbdApiKey` is set, so an empty key can't reach the cluster. Use `--set-string` for the image tag, because a git SHA made only of digits is otherwise read as a number.
 
 ---
 
