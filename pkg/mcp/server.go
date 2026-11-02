@@ -39,10 +39,10 @@ func NewServer(apiKey string) *Server {
 func (s *Server) registerTools() {
 	// Tool 1: Get CFB Scores & Schedule
 	scoresTool := mcp.NewTool("get_cfb_scores",
-		mcp.WithDescription("Fetch College Football scores, game schedules, and match results. IMPORTANT: Always provide the 'team' parameter if a specific school or matchup is requested to avoid retrieving all games nationwide."),
+		mcp.WithDescription("Fetch College Football scores, game schedules, and match results. IMPORTANT: Every call needs 'team' or 'week'; a call with neither is rejected because a whole nationwide season is too large. Always provide 'team' if a specific school or matchup is requested."),
 		mcp.WithNumber("year", mcp.Description("Season year (defaults to current year)")),
-		mcp.WithNumber("week", mcp.Description("Week number (1-15)")),
-		mcp.WithString("date", mcp.Description("Specific date filter formatted as YYYY-MM-DD")),
+		mcp.WithNumber("week", mcp.Description("Week number (1-15). Required unless 'team' is provided.")),
+		mcp.WithString("date", mcp.Description("Narrows a 'team' or 'week' result to one date, formatted as YYYY-MM-DD")),
 		mcp.WithString("team", mcp.Description("Team name or common abbreviation (e.g., 'CSU', 'Ole Miss', 'Bama', 'Ohio State'). ALWAYS provide this when asking about a specific team.")),
 	)
 	s.mcpServer.AddTool(scoresTool, s.handleGetScores)
@@ -83,8 +83,15 @@ func (s *Server) handleGetScores(ctx context.Context, request mcp.CallToolReques
 	}
 
 	var teamName string
-	if t, ok := team.(string); ok && t != "" {
+	if t, ok := team.(string); ok && strings.TrimSpace(t) != "" {
 		teamName = resolver.ResolveTeamName(t)
+	}
+
+	// Without a team or week, CFBD returns the whole nationwide season, which takes
+	// longer than MCP clients wait and is too large to use. CFBD has no date filter,
+	// so the date check below runs after the fetch and doesn't narrow the query.
+	if teamName == "" && weekInt <= 0 {
+		return mcp.NewToolResultError("get_cfb_scores needs a 'team' or a 'week': a whole nationwide season is too large to return. Call it again with one of them; 'year' and 'date' alone are not enough."), nil
 	}
 
 	games, err := s.cfbdClient.GetGames(yearInt, weekInt, teamName)
