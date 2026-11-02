@@ -3,6 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/tmonteith/sportsagentic
   pullPolicy: IfNotPresent
+  # Keep this quoted, and use --set-string for an all-digit git SHA
   tag: "latest"
 
 imagePullSecrets: []
@@ -13,6 +14,7 @@ config:
   port: "8080"
   mode: "sse"
 
+# Required: set existingSecret in production, or cfbdApiKey for a throwaway install
 secrets:
   existingSecret: ""
   existingSecretKey: "CFBD_API_KEY"

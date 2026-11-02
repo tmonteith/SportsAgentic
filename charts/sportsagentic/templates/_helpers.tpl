@@ -60,12 +60,31 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Return the Secret name holding CFBD_API_KEY
+Return the Secret name holding CFBD_API_KEY. Fails when no key was provided,
+because the server can't call CFBD without one and /health won't show it.
 */}}
 {{- define "sportsagentic.secretName" -}}
 {{- if .Values.secrets.existingSecret }}
 {{- .Values.secrets.existingSecret }}
-{{- else }}
+{{- else if trim (.Values.secrets.cfbdApiKey | default "") }}
 {{- include "sportsagentic.fullname" . }}
+{{- else }}
+{{- fail "CFBD API key is missing: set secrets.existingSecret to a Secret holding it, or set secrets.cfbdApiKey to a non-empty value." }}
 {{- end }}
+{{- end }}
+
+{{/*
+Return the image tag as a string. A number from a values file or --reuse-values
+is a float64 here, and toString would turn 8542126 into 8.542126e+06.
+*/}}
+{{- define "sportsagentic.imageTag" -}}
+{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- if kindIs "float64" $tag -}}
+{{- if ne (floor $tag) $tag -}}
+{{- fail (printf "image.tag %v is not a whole number, so YAML has already changed it. Quote it, or pass --set-string image.tag=<tag>." $tag) -}}
+{{- end -}}
+{{- printf "%.0f" $tag -}}
+{{- else -}}
+{{- $tag -}}
+{{- end -}}
 {{- end }}
