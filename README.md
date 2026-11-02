@@ -168,7 +168,7 @@ Add to your Cursor / Zed MCP configuration:
 
 | Tool Name | Parameters | Description |
 | :--- | :--- | :--- |
-| **`get_cfb_scores`** | `year`, `week`, `date` (YYYY-MM-DD), `team` | Fetch game scores and schedules for any team, week, or specific date. |
+| **`get_cfb_scores`** | `year`, `week`, `date` (YYYY-MM-DD), `team` | Fetch game scores and schedules for a team or week, optionally narrowed to one date. Calls without `team` or `week` return an error. |
 | **`get_team_schedule`**| `team` (required), `year` | Get full season schedule and results for any college team. |
 | **`get_cfb_rankings`** | `year`, `week` | Retrieve national AP Top 25 and CFP rankings. |
 
