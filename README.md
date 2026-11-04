@@ -13,26 +13,16 @@ Query live game scores, weekly matchups, full team schedules, and national ranki
 
 ## 🏗️ Architecture
 
-```
-  ┌──────────────────────────────────────────────────────────────┐
-  │                        AI INTERFACES                         │
-  │   [Claude Desktop]   [ChatGPT / OpenAI]   [Delta]   [Cursor] │
-  └───────────────┬──────────────┬───────────────┬───────────────┘
-                  │              │               │
-     MCP (stdio)  │   OpenAPI    │   MCP (SSE)   │  MCP (stdio)
-                  ▼              ▼               ▼
-  ┌──────────────────────────────────────────────────────────────┐
-  │                SportsAgentic Core (Go Server)                │
-  │  - Smart Team Entity Resolver ("Bama", "Ole Miss", "CSU")    │
-  │  - Dynamic Season & Week Resolver                            │
-  │  - Multi-Transport Engine (Stdio, SSE, REST)                 │
-  └──────────────────────────────┬───────────────────────────────┘
-                                 │
-                                 ▼
-  ┌──────────────────────────────────────────────────────────────┐
-  │                 College Football Data (CFBD)                 │
-  └──────────────────────────────────────────────────────────────┘
-```
+![SportsAgentic Architecture](docs/architecture.svg)
+
+SportsAgentic is a high-performance Model Context Protocol (MCP) server written in Go 1.23:
+- **Multi-Transport Engine**: Supports `stdio` (for Claude Desktop, Cursor, Zed, Windsurf) and HTTP/SSE on `:8080/sse` and `:8080/message` (for `SportsAgenticAgent`, Delta skills, and network clients).
+- **Tool Dispatcher**: Exposes three core MCP tools:
+  - `get_cfb_scores`: fetches live and historical scores by season, week, team, or date with mandatory parameter enforcement (preventing unbounded nationwide season queries).
+  - `get_team_schedule`: retrieves full season game schedules for a specified team.
+  - `get_cfb_rankings`: retrieves national AP Top 25 and College Football Playoff (CFP) rankings.
+- **Smart Entity Resolution** (`pkg/resolver/team.go`): Normalizes informal aliases, abbreviations, and nicknames (e.g. "Bama" ➔ "Alabama", "CSU" ➔ "Colorado State", "Ole Miss" ➔ "Ole Miss") into official CFBD school identifiers.
+- **CFBD Client** (`pkg/cfbd/client.go`): Communicates with the College Football Data REST API with Bearer token authentication.
 
 ---
 

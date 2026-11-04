@@ -1,0 +1,53 @@
+flowchart TD
+    subgraph Clients["AI Clients & Interfaces"]
+        Claude["Claude Desktop / Code<br/><i>stdio transport</i>"]
+        Cursor["Cursor / Zed / Windsurf<br/><i>stdio transport</i>"]
+        Agent["SportsAgenticAgent<br/><i>SSE transport (:8080/sse)</i>"]
+        Delta["Delta Agent Skill<br/><i>SSE query.py (:8080/sse)</i>"]
+    end
+
+    subgraph Server["SportsAgentic Core (Go 1.23)"]
+        direction TB
+        subgraph Transports["Transport Layer"]
+            StdioHandler["Stdio Transport<br/><code>ServeStdio()</code>"]
+            SSEHandler["SSE / HTTP Transport<br/><code>ServeSSE()</code><br/>Endpoints: /sse, /message"]
+        end
+
+        subgraph MCPCore["MCP Engine (mark3labs/mcp-go)"]
+            Dispatcher["Tool Call Dispatcher"]
+            ScoresTool["<code>get_cfb_scores</code><br/>• year, week, team, date<br/>• Enforces required parameters<br/>• Post-filters by date YYYY-MM-DD"]
+            ScheduleTool["<code>get_team_schedule</code><br/>• team (required), year<br/>• Full season match schedule"]
+            RankingsTool["<code>get_cfb_rankings</code><br/>• year, week<br/>• AP Top 25 & CFP polls"]
+        end
+
+        subgraph Resolution["Entity Resolution Engine"]
+            TeamResolver["<code>ResolveTeamName()</code><br/>Normalizes aliases & nicknames<br/>('Bama' ➔ 'Alabama', 'CSU' ➔ 'Colorado State',<br/>'Ole Miss' ➔ 'Ole Miss', 'USC' ➔ 'USC')"]
+        end
+
+        subgraph ClientPkg["CFBD Client (pkg/cfbd)"]
+            CFBDClient["HTTP Client<br/>Bearer Auth (CFBD_API_KEY)"]
+        end
+    end
+
+    subgraph External["External Data Provider"]
+        CFBDApi["College Football Data API<br/><code>api.collegefootballdata.com</code><br/>/games & /rankings"]
+    end
+
+    Claude --> StdioHandler
+    Cursor --> StdioHandler
+    Agent --> SSEHandler
+    Delta --> SSEHandler
+
+    StdioHandler --> Dispatcher
+    SSEHandler --> Dispatcher
+
+    Dispatcher --> ScoresTool
+    Dispatcher --> ScheduleTool
+    Dispatcher --> RankingsTool
+
+    ScoresTool --> TeamResolver
+    ScheduleTool --> TeamResolver
+
+    TeamResolver --> CFBDClient
+    RankingsTool --> CFBDClient
+    CFBDClient -->|HTTPS REST| CFBDApi
