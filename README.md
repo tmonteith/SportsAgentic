@@ -190,6 +190,33 @@ The chart fails if neither `secrets.existingSecret` nor `secrets.cfbdApiKey` is 
 
 ---
 
+## 🏞️ Lakehouse Ingestion (extractor and poller)
+
+Two small commands feed the SportsAgentic lakehouse. Both reuse `pkg/cfbd`, count every CFBD request in their logs (the monthly quota is shared with the MCP tools) and retry `429`/`5xx` with backoff.
+
+| Command | Runs as | Does |
+| --- | --- | --- |
+| `cmd/extractor` | nightly CronJob and backfill Job (namespace `data`) | Lands raw `/games`, `/plays` and `/teams` responses, gzipped, at `gs://${GCP_PROJECT}-sa-landing/cfb/<endpoint>/season=<YYYY>/week=<WW>/<fetched_at>.json.gz`. Never overwrites; skips a response already landed (same endpoint and query) unless `--force`. |
+| `cmd/poller` | Deployment, 1 replica | Reads the schedule, sleeps until 15 minutes before the next kickoff, then polls `/scoreboard` every 60 s and publishes a game to Kafka topic `cfb.live_games` only when its state changed. |
+
+```bash
+go test ./...                                       # recorded fixtures only; no live API, GCS or Kafka
+
+# Extractor (Application Default Credentials for GCS)
+export CFBD_API_KEY=... GCP_PROJECT=... GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+go run ./cmd/extractor --season=2024 --weeks=all --dry-run    # what would be fetched
+go run ./cmd/extractor --season=2024 --weeks=all              # backfill one season
+go run ./cmd/extractor --season=current --weeks=recent --force  # what the nightly CronJob runs
+
+# Poller
+export CFBD_API_KEY=... KAFKA_BOOTSTRAP=localhost:9092
+go run ./cmd/poller
+```
+
+Images: `cmd/extractor/Dockerfile` and `cmd/poller/Dockerfile` (distroless, non-root, `linux/amd64` and `linux/arm64`), built and pushed to OCIR as `sportsagentic/extractor` and `sportsagentic/poller` by `.github/workflows/ingest-images.yml` on every push to `main` that touches them, both with the same short-SHA tag. The Kubernetes manifests live in the infra repo (`k8s/data/ingest`).
+
+---
+
 ## 🤝 Contributing
 Pull requests are welcome! If you want to add new tools (such as transfer portal trackers, injury reports, or betting line analytics), feel free to open an issue or PR.
 
