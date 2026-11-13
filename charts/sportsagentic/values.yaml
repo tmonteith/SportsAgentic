@@ -20,6 +20,15 @@ secrets:
   existingSecretKey: "CFBD_API_KEY"
   cfbdApiKey: ""
 
+# Optional: enables the lakehouse analytics tools (get_team_analytics, get_game_summary).
+# existingSecret names a Secret holding the GCP service account key under key.json
+# (gcp-key-mcp-server); it is mounted read-only at /var/secrets/gcp/key.json.
+# project is the GCP project ID and is required when existingSecret is set.
+# Leave existingSecret empty to run only the live CFBD tools.
+gcp:
+  existingSecret: ""
+  project: ""
+
 serviceAccount:
   create: true
   automount: true

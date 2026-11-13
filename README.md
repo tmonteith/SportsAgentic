@@ -161,6 +161,42 @@ Add to your Cursor / Zed MCP configuration:
 | **`get_cfb_scores`** | `year`, `week`, `date` (YYYY-MM-DD), `team` | Fetch game scores and schedules for a team or week, optionally narrowed to one date. Calls without `team` or `week` return an error. |
 | **`get_team_schedule`**| `team` (required), `year` | Get full season schedule and results for any college team. |
 | **`get_cfb_rankings`** | `year`, `week` | Retrieve national AP Top 25 and CFP rankings. |
+| **`get_team_analytics`** | `team`, `season` (required), `week_from`, `week_to`, `metrics`, `compare_team`, `season_type` | Weekly offensive and defensive efficiency (EPA per play, success rate, explosiveness, points per drive) plus a range total, from the lakehouse. Only when `GCP_PROJECT` is set. |
+| **`get_game_summary`** | `game_id`, or `team` + `season` + `week`; `season_type` | Score, plays, yards, EPA per play, success rate and turnovers for one past game, from the lakehouse. Only when `GCP_PROJECT` is set. |
+
+### Lakehouse analytics tools (optional)
+
+`get_team_analytics` and `get_game_summary` read the gold tables of the SportsAgentic lakehouse in BigQuery
+(`<GCP_PROJECT>.sa_catalog.gold.team_efficiency_weekly` and `.game_summaries`). Use them for multi-week or
+multi-season analytics, past games and efficiency stats; the live tools above stay the source for current scores,
+schedules, rankings and rosters. Week-range metrics are computed from the stored sums (for example
+Σ`off_epa_sum` / Σ`off_epa_plays`), never by averaging weekly rates, and a zero denominator returns `null`.
+
+They are registered only when `GCP_PROJECT` is set; without it the server behaves exactly as before.
+
+| Env var | Value |
+| :--- | :--- |
+| `GCP_PROJECT` | GCP project ID that runs (and is billed for) the queries |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to the `sa-mcp-server` key file; any Application Default Credentials work |
+
+In Helm, set `gcp.existingSecret` to a Secret holding the key under `key.json` (for example `gcp-key-mcp-server`)
+and `gcp.project` to the project ID. The chart mounts the key read-only at `/var/secrets/gcp/key.json` and sets both
+env vars. With `gcp.existingSecret` empty (the default), the rendered manifests are unchanged.
+
+```bash
+helm upgrade --install sportsagentic charts/sportsagentic \
+  --namespace sportsagentic \
+  --set secrets.existingSecret=mcp-secrets \
+  --set gcp.existingSecret=gcp-key-mcp-server \
+  --set gcp.project=<gcp-project-id> \
+  --set-string image.tag=<git-sha>
+```
+
+**Cost limits.** Queries are fixed, parameterized SQL against an allowlist of gold tables; the model never supplies
+SQL, identifiers or ordering. Each query runs in `us-central1` with `MaximumBytesBilled` = 100 MB, returns at most
+200 rows and each tool call times out after 15 seconds. Results are cached in memory for 10 minutes per set of
+normalized arguments, and team-name lookups for 24 hours, so normal use stays inside the BigQuery free tier
+(1 TB scanned per month).
 
 ---
 

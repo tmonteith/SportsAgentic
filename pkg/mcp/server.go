@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/tmonteith/SportsAgentic/pkg/analytics"
 	"github.com/tmonteith/SportsAgentic/pkg/cfbd"
 	"github.com/tmonteith/SportsAgentic/pkg/resolver"
 )
@@ -16,9 +18,16 @@ import (
 type Server struct {
 	mcpServer  *server.MCPServer
 	cfbdClient *cfbd.Client
+	analytics  *analytics.Service // nil unless GCP_PROJECT is set
 }
 
+// NewServer registers the live CFBD tools, plus the lakehouse analytics tools
+// when the GCP_PROJECT env var is set.
 func NewServer(apiKey string) *Server {
+	return newServer(apiKey, strings.TrimSpace(os.Getenv("GCP_PROJECT")), newBigQueryQuerier)
+}
+
+func newServer(apiKey, gcpProject string, newQuerier querierFactory) *Server {
 	s := server.NewMCPServer(
 		"College Football Agent",
 		"1.0.0",
@@ -33,6 +42,9 @@ func NewServer(apiKey string) *Server {
 	}
 
 	srv.registerTools()
+	if gcpProject != "" {
+		srv.registerAnalyticsTools(gcpProject, newQuerier)
+	}
 	return srv
 }
 

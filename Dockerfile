@@ -1,5 +1,8 @@
 # Build Stage
-FROM golang:1.23-alpine AS builder
+# Runs on the build host and cross-compiles, so multi-arch builds need no emulation.
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -14,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build statically linked binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/sportsagentic cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /app/bin/sportsagentic cmd/server/main.go
 
 # Runtime Stage
 FROM alpine:3.20
