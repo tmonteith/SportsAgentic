@@ -1,3 +1,4 @@
+{{- $gcp := .Values.gcp | default dict }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -51,12 +52,33 @@ spec:
                 secretKeyRef:
                   name: {{ include "sportsagentic.secretName" . }}
                   key: {{ .Values.secrets.existingSecretKey }}
+            {{- if $gcp.existingSecret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/key.json
+            - name: GCP_PROJECT
+              value: {{ required "gcp.project is required when gcp.existingSecret is set" $gcp.project | quote }}
+            {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if $gcp.existingSecret }}
+          volumeMounts:
+            - name: gcp-key
+              mountPath: /var/secrets/gcp
+              readOnly: true
+          {{- end }}
+      {{- if $gcp.existingSecret }}
+      volumes:
+        - name: gcp-key
+          secret:
+            secretName: {{ $gcp.existingSecret }}
+            items:
+              - key: key.json
+                path: key.json
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
